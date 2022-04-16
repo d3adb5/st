@@ -105,6 +105,7 @@ typedef struct {
 	XSetWindowAttributes attrs;
 	int scr;
 	int isfixed; /* is fixed geometry? */
+	int override_redirect; /* set the override_redirect bit? */
 	int l, t; /* left and top offset */
 	int gm; /* geometry mask */
 } XWindow;
@@ -1168,12 +1169,15 @@ xinit(int cols, int rows)
 		| ButtonMotionMask | ButtonPressMask | ButtonReleaseMask;
 	xw.attrs.colormap = xw.cmap;
 
+	if (xw.override_redirect)
+		xw.attrs.override_redirect = True;
+
 	if (!(opt_embed && (parent = strtol(opt_embed, NULL, 0))))
 		parent = XRootWindow(xw.dpy, xw.scr);
 	xw.win = XCreateWindow(xw.dpy, parent, xw.l, xw.t,
 			win.w, win.h, 0, XDefaultDepth(xw.dpy, xw.scr), InputOutput,
 			xw.vis, CWBackPixel | CWBorderPixel | CWBitGravity
-			| CWEventMask | CWColormap, &xw.attrs);
+			| CWEventMask | CWColormap | CWOverrideRedirect, &xw.attrs);
 
 	memset(&gcvalues, 0, sizeof(gcvalues));
 	gcvalues.graphics_exposures = False;
@@ -1228,6 +1232,10 @@ xinit(int cols, int rows)
 	resettitle();
 	xhints();
 	XMapWindow(xw.dpy, xw.win);
+
+	if (xw.override_redirect)
+		XSetInputFocus(xw.dpy, xw.win, RevertToParent, CurrentTime);
+
 	XSync(xw.dpy, False);
 
 	clock_gettime(CLOCK_MONOTONIC, &xsel.tclick1);
@@ -1788,6 +1796,8 @@ focus(XEvent *ev)
 		xseturgency(0);
 		if (IS_SET(MODE_FOCUS))
 			ttywrite("\033[I", 3, 0);
+	} else if (xw.override_redirect) {
+		XSetInputFocus(xw.dpy, xw.win, RevertToParent, CurrentTime);
 	} else {
 		if (xw.ime.xic)
 			XUnsetICFocus(xw.ime.xic);
@@ -2039,7 +2049,7 @@ int
 main(int argc, char *argv[])
 {
 	xw.l = xw.t = 0;
-	xw.isfixed = False;
+	xw.override_redirect = xw.isfixed = False;
 	xsetcursor(cursorshape);
 
 	ARGBEGIN {
@@ -2071,6 +2081,9 @@ main(int argc, char *argv[])
 		break;
 	case 'n':
 		opt_name = EARGF(usage());
+		break;
+	case 'r':
+		xw.override_redirect = 1;
 		break;
 	case 't':
 	case 'T':
