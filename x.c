@@ -108,6 +108,7 @@ typedef struct {
 	int override_redirect; /* set the override_redirect bit? */
 	int l, t; /* left and top offset */
 	int gm; /* geometry mask */
+	int center_window; /* whether to center the terminal window */
 } XWindow;
 
 typedef struct {
@@ -1160,6 +1161,11 @@ xinit(int cols, int rows)
 	if (xw.gm & YNegative)
 		xw.t += DisplayHeight(xw.dpy, xw.scr) - win.h - 2;
 
+	if (xw.center_window) {
+		xw.l = (DisplayWidth(xw.dpy, xw.scr) - win.w) / 2;
+		xw.t = (DisplayHeight(xw.dpy, xw.scr) - win.h) / 2;
+	}
+
 	/* Events */
 	xw.attrs.background_pixel = dc.col[defaultbg].pixel;
 	xw.attrs.border_pixel = dc.col[defaultbg].pixel;
@@ -2049,7 +2055,7 @@ int
 main(int argc, char *argv[])
 {
 	xw.l = xw.t = 0;
-	xw.override_redirect = xw.isfixed = False;
+	xw.center_window = xw.override_redirect = xw.isfixed = False;
 	xsetcursor(cursorshape);
 
 	ARGBEGIN {
@@ -2058,6 +2064,9 @@ main(int argc, char *argv[])
 		break;
 	case 'c':
 		opt_class = EARGF(usage());
+		break;
+	case 'C':
+		xw.center_window = 1;
 		break;
 	case 'e':
 		if (argc > 0)
