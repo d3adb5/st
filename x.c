@@ -1204,8 +1204,11 @@ xinit(int cols, int rows)
 			xw.vis, CWBackPixel | CWBorderPixel | CWBitGravity
 			| CWEventMask | CWColormap | CWOverrideRedirect, &xw.attrs);
 
-	XSetWindowBorderWidth(xw.dpy, xw.win, xw.window_border_width);
-	XSetWindowBorder(xw.dpy, xw.win, pixelfromhex(opt_bhex));
+	if (xw.window_border_width)
+		XSetWindowBorderWidth(xw.dpy, xw.win, xw.window_border_width);
+
+	if (opt_bhex)
+		XSetWindowBorder(xw.dpy, xw.win, pixelfromhex(opt_bhex));
 
 	memset(&gcvalues, 0, sizeof(gcvalues));
 	gcvalues.graphics_exposures = False;
