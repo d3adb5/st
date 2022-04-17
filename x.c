@@ -109,6 +109,7 @@ typedef struct {
 	int l, t; /* left and top offset */
 	int gm; /* geometry mask */
 	int center_window; /* whether to center the terminal window */
+	int window_border_width; /* window border width */
 } XWindow;
 
 typedef struct {
@@ -253,6 +254,7 @@ static char *opt_io    = NULL;
 static char *opt_line  = NULL;
 static char *opt_name  = NULL;
 static char *opt_title = NULL;
+static char *opt_bhex  = NULL;
 
 static uint buttons; /* bit field of pressed buttons */
 
@@ -433,6 +435,23 @@ mousereport(XEvent *e)
 	}
 
 	ttywrite(buf, len, 0);
+}
+
+inline static unsigned long
+hex2dec(const char c)
+{
+	return (c - '0' > 9) ? c - 'a' + 10 : c - '0';
+}
+
+static unsigned long
+pixelfromhex(const char* hex)
+{
+	unsigned long pixel = 0;
+
+	for (int i = 0; hex[i]; ++i)
+		pixel += hex2dec(hex[i]) * pow(16, 5 - i);
+
+	return pixel;
 }
 
 uint
@@ -1154,8 +1173,8 @@ xinit(int cols, int rows)
 	xloadcols();
 
 	/* adjust fixed window geometry */
-	win.w = 2 * borderpx + cols * win.cw;
-	win.h = 2 * borderpx + rows * win.ch;
+	win.w = 2 * borderpx + cols * win.cw + 2 * xw.window_border_width;
+	win.h = 2 * borderpx + rows * win.ch + 2 * xw.window_border_width;
 	if (xw.gm & XNegative)
 		xw.l += DisplayWidth(xw.dpy, xw.scr) - win.w - 2;
 	if (xw.gm & YNegative)
@@ -1184,6 +1203,12 @@ xinit(int cols, int rows)
 			win.w, win.h, 0, XDefaultDepth(xw.dpy, xw.scr), InputOutput,
 			xw.vis, CWBackPixel | CWBorderPixel | CWBitGravity
 			| CWEventMask | CWColormap | CWOverrideRedirect, &xw.attrs);
+
+	if (xw.window_border_width)
+		XSetWindowBorderWidth(xw.dpy, xw.win, xw.window_border_width);
+
+	if (opt_bhex)
+		XSetWindowBorder(xw.dpy, xw.win, pixelfromhex(opt_bhex));
 
 	memset(&gcvalues, 0, sizeof(gcvalues));
 	gcvalues.graphics_exposures = False;
@@ -2054,13 +2079,19 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-	xw.l = xw.t = 0;
+	xw.l = xw.t = xw.window_border_width = 0;
 	xw.center_window = xw.override_redirect = xw.isfixed = False;
 	xsetcursor(cursorshape);
 
 	ARGBEGIN {
 	case 'a':
 		allowaltscreen = 0;
+		break;
+	case 'b':
+		xw.window_border_width = atoi(EARGF(usage()));
+		break;
+	case 'B':
+		opt_bhex = EARGF(usage());
 		break;
 	case 'c':
 		opt_class = EARGF(usage());
