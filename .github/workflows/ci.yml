@@ -1,0 +1,14 @@
+name: CI
+
+on: pull_request
+
+jobs:
+  build:
+    name: Compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout files in the repository
+        uses: actions/checkout@v3
+
+      - name: Compile st
+        run: make
