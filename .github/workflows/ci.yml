@@ -12,3 +12,13 @@ jobs:
 
       - name: Compile st
         run: make
+
+  terminfo:
+    name: Terminfo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout files in the repository
+        uses: actions/checkout@v3
+
+      - name: Compile st's terminfo entry
+        run: tic -sx st.info
