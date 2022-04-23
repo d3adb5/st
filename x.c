@@ -105,8 +105,11 @@ typedef struct {
 	XSetWindowAttributes attrs;
 	int scr;
 	int isfixed; /* is fixed geometry? */
+	int override_redirect; /* set the override_redirect bit? */
 	int l, t; /* left and top offset */
 	int gm; /* geometry mask */
+	int center_window; /* whether to center the terminal window */
+	int window_border_width; /* window border width */
 } XWindow;
 
 typedef struct {
@@ -251,6 +254,7 @@ static char *opt_io    = NULL;
 static char *opt_line  = NULL;
 static char *opt_name  = NULL;
 static char *opt_title = NULL;
+static char *opt_bhex  = NULL;
 
 static uint buttons; /* bit field of pressed buttons */
 
@@ -431,6 +435,23 @@ mousereport(XEvent *e)
 	}
 
 	ttywrite(buf, len, 0);
+}
+
+inline static unsigned long
+hex2dec(const char c)
+{
+	return (c - '0' > 9) ? c - 'a' + 10 : c - '0';
+}
+
+static unsigned long
+pixelfromhex(const char* hex)
+{
+	unsigned long pixel = 0;
+
+	for (int i = 0; hex[i]; ++i)
+		pixel += hex2dec(hex[i]) * pow(16, 5 - i);
+
+	return pixel;
 }
 
 uint
@@ -1152,12 +1173,17 @@ xinit(int cols, int rows)
 	xloadcols();
 
 	/* adjust fixed window geometry */
-	win.w = 2 * borderpx + cols * win.cw;
-	win.h = 2 * borderpx + rows * win.ch;
+	win.w = 2 * borderpx + cols * win.cw + 2 * xw.window_border_width;
+	win.h = 2 * borderpx + rows * win.ch + 2 * xw.window_border_width;
 	if (xw.gm & XNegative)
 		xw.l += DisplayWidth(xw.dpy, xw.scr) - win.w - 2;
 	if (xw.gm & YNegative)
 		xw.t += DisplayHeight(xw.dpy, xw.scr) - win.h - 2;
+
+	if (xw.center_window) {
+		xw.l = (DisplayWidth(xw.dpy, xw.scr) - win.w) / 2;
+		xw.t = (DisplayHeight(xw.dpy, xw.scr) - win.h) / 2;
+	}
 
 	/* Events */
 	xw.attrs.background_pixel = dc.col[defaultbg].pixel;
@@ -1168,12 +1194,21 @@ xinit(int cols, int rows)
 		| ButtonMotionMask | ButtonPressMask | ButtonReleaseMask;
 	xw.attrs.colormap = xw.cmap;
 
+	if (xw.override_redirect)
+		xw.attrs.override_redirect = True;
+
 	if (!(opt_embed && (parent = strtol(opt_embed, NULL, 0))))
 		parent = XRootWindow(xw.dpy, xw.scr);
 	xw.win = XCreateWindow(xw.dpy, parent, xw.l, xw.t,
 			win.w, win.h, 0, XDefaultDepth(xw.dpy, xw.scr), InputOutput,
 			xw.vis, CWBackPixel | CWBorderPixel | CWBitGravity
-			| CWEventMask | CWColormap, &xw.attrs);
+			| CWEventMask | CWColormap | CWOverrideRedirect, &xw.attrs);
+
+	if (xw.window_border_width)
+		XSetWindowBorderWidth(xw.dpy, xw.win, xw.window_border_width);
+
+	if (opt_bhex)
+		XSetWindowBorder(xw.dpy, xw.win, pixelfromhex(opt_bhex));
 
 	memset(&gcvalues, 0, sizeof(gcvalues));
 	gcvalues.graphics_exposures = False;
@@ -1228,6 +1263,10 @@ xinit(int cols, int rows)
 	resettitle();
 	xhints();
 	XMapWindow(xw.dpy, xw.win);
+
+	if (xw.override_redirect)
+		XSetInputFocus(xw.dpy, xw.win, RevertToParent, CurrentTime);
+
 	XSync(xw.dpy, False);
 
 	clock_gettime(CLOCK_MONOTONIC, &xsel.tclick1);
@@ -1788,6 +1827,8 @@ focus(XEvent *ev)
 		xseturgency(0);
 		if (IS_SET(MODE_FOCUS))
 			ttywrite("\033[I", 3, 0);
+	} else if (xw.override_redirect) {
+		XSetInputFocus(xw.dpy, xw.win, RevertToParent, CurrentTime);
 	} else {
 		if (xw.ime.xic)
 			XUnsetICFocus(xw.ime.xic);
@@ -2038,16 +2079,25 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-	xw.l = xw.t = 0;
-	xw.isfixed = False;
+	xw.l = xw.t = xw.window_border_width = 0;
+	xw.center_window = xw.override_redirect = xw.isfixed = False;
 	xsetcursor(cursorshape);
 
 	ARGBEGIN {
 	case 'a':
 		allowaltscreen = 0;
 		break;
+	case 'b':
+		xw.window_border_width = atoi(EARGF(usage()));
+		break;
+	case 'B':
+		opt_bhex = EARGF(usage());
+		break;
 	case 'c':
 		opt_class = EARGF(usage());
+		break;
+	case 'C':
+		xw.center_window = 1;
 		break;
 	case 'e':
 		if (argc > 0)
@@ -2071,6 +2121,9 @@ main(int argc, char *argv[])
 		break;
 	case 'n':
 		opt_name = EARGF(usage());
+		break;
+	case 'r':
+		xw.override_redirect = 1;
 		break;
 	case 't':
 	case 'T':
