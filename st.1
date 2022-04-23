@@ -3,7 +3,11 @@
 st \- simple terminal
 .SH SYNOPSIS
 .B st
-.RB [ \-aiv ]
+.RB [ \-aCirv ]
+.RB [ \-b
+.IR bordersize ]
+.RB [ \-B
+.IR bordercolor ]
 .RB [ \-c
 .IR class ]
 .RB [ \-f
@@ -27,7 +31,11 @@ st \- simple terminal
 .RI [ arguments ...]]
 .PP
 .B st
-.RB [ \-aiv ]
+.RB [ \-aCirv ]
+.RB [ \-b
+.IR bordersize ]
+.RB [ \-B
+.IR bordercolor ]
 .RB [ \-c
 .IR class ]
 .RB [ \-f
@@ -55,8 +63,17 @@ is a simple terminal emulator.
 .B \-a
 disable alternate screens in terminal
 .TP
+.BI \-b " bordersize"
+set a window border size in pixels.
+.TP
+.BI \-B " bordercolor"
+set a window border color using a hex value (without #).
+.TP
 .BI \-c " class"
 defines the window class (default $TERM).
+.TP
+.BI \-C
+try to center the st window on the screen.
 .TP
 .BI \-f " font"
 defines the
