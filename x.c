@@ -14,6 +14,7 @@
 #include <X11/keysym.h>
 #include <X11/Xft/Xft.h>
 #include <X11/XKBlib.h>
+#include <stdlib.h>
 
 char *argv0;
 #include "arg.h"
@@ -223,6 +224,8 @@ static DC dc;
 static XWindow xw;
 static XSelection xsel;
 static TermWindow win;
+static Window previously_focused;
+static int previously_revert;
 
 /* Font Ring Cache */
 enum {
@@ -1172,6 +1175,9 @@ xinit(int cols, int rows)
 	xw.cmap = XDefaultColormap(xw.dpy, xw.scr);
 	xloadcols();
 
+	/* store current focus information */
+	XGetInputFocus(xw.dpy, &previously_focused, &previously_revert);
+
 	/* adjust fixed window geometry */
 	win.w = 2 * borderpx + cols * win.cw + 2 * xw.window_border_width;
 	win.h = 2 * borderpx + rows * win.ch + 2 * xw.window_border_width;
@@ -2076,6 +2082,12 @@ usage(void)
 	    " [stty_args ...]\n", argv0, argv0);
 }
 
+void
+returnfocus(void)
+{
+	XSetInputFocus(xw.dpy, previously_focused, previously_revert, CurrentTime);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -2154,6 +2166,9 @@ run:
 	xinit(cols, rows);
 	xsetenv();
 	selinit();
+
+	atexit(returnfocus);
+
 	run();
 
 	return 0;
