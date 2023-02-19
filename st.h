@@ -122,6 +122,8 @@ void boxdraw_xinit(Display *, Colormap, XftDraw *, Visual *);
 void drawboxes(int, int, int, int, XftColor *, XftColor *, const XftGlyphFontSpec *, int);
 #endif
 
+void returnfocus(void);
+
 /* config.h globals */
 extern char *utmp;
 extern char *scroll;
