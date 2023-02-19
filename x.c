@@ -2086,6 +2086,7 @@ void
 returnfocus(void)
 {
 	XSetInputFocus(xw.dpy, previously_focused, previously_revert, CurrentTime);
+	XCloseDisplay(xw.dpy);
 }
 
 int
