@@ -10,6 +10,9 @@ jobs:
       - name: Checkout files in the repository
         uses: actions/checkout@v3
 
+      - name: Install X11 libraries
+        run: sudo apt-get install libx11-dev libxft-dev
+
       - name: Compile st
         run: make
 
