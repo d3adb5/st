@@ -781,6 +781,7 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 	if (openpty(&m, &s, NULL, NULL, NULL) < 0)
 		die("openpty failed: %s\n", strerror(errno));
 
+	signal(SIGCHLD, sigchld);
 	switch (pid = fork()) {
 	case -1:
 		die("fork failed: %s\n", strerror(errno));
@@ -809,7 +810,6 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 #endif
 		close(s);
 		cmdfd = m;
-		signal(SIGCHLD, sigchld);
 		break;
 	}
 	return cmdfd;
