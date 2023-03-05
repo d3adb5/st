@@ -726,8 +726,7 @@ sigchld(int a)
 	else if (WIFSIGNALED(stat))
 		die("child terminated due to signal %d\n", WTERMSIG(stat));
 
-	returnfocus();
-	_exit(0);
+	exit(0);
 }
 
 void
