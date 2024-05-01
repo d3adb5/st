@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout files in the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install X11 libraries
         run: sudo apt-get install libx11-dev libxft-dev
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout files in the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Compile st's terminfo entry
         run: tic -sx st.info
