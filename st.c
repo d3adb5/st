@@ -721,6 +721,8 @@ sigchld(int a)
 	if (pid != p)
 		return;
 
+	returnfocus();
+
 	if (WIFEXITED(stat) && WEXITSTATUS(stat))
 		die("child exited with status %d\n", WEXITSTATUS(stat));
 	else if (WIFSIGNALED(stat))
