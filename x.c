@@ -15,7 +15,6 @@
 #include <X11/Xft/Xft.h>
 #include <X11/XKBlib.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 char *argv0;
 #include "arg.h"
@@ -2095,18 +2094,8 @@ usage(void)
 void
 returnfocus(void)
 {
-	FILE *fp = fopen("/tmp/stfocusreturn", "a");
-	time_t t;
-
-	time(&t);
-
-	fprintf(fp, "\n\n#%s# returnfocus (%d)\n#\n\n", ctime(&t), getpid());
-	fprintf(fp, "returning focus to %lu\n", previously_focused);
 	XSetInputFocus(xw.dpy, previously_focused, previously_revert, CurrentTime);
-	fprintf(fp, "closing connection to display %p\n", xw.dpy);
 	XCloseDisplay(xw.dpy);
-	fprintf(fp, "connection closed, closing file\n");
-	fclose(fp);
 }
 
 int

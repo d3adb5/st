@@ -16,7 +16,6 @@
 #include <termios.h>
 #include <unistd.h>
 #include <wchar.h>
-#include <time.h>
 
 #include "st.h"
 #include "win.h"
@@ -713,33 +712,20 @@ execsh(char *cmd, char **args)
 void
 sigchld(int a)
 {
-	FILE *fp = fopen("/tmp/stfocusreturn", "a");
 	int stat;
 	pid_t p;
-	time_t t;
-
-	time(&t);
-	fprintf(fp, "\n\n#%s# sigchld (%d)\n#\n\n", ctime(&t), getpid());
-	fprintf(fp, "starting execution of sigchld\n");
 
 	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
 		die("waiting for pid %hd failed: %s\n", pid, strerror(errno));
 
-	fprintf(fp, "checking if pids differ: pid = %d, p = %d\n", pid, p);
-	if (pid != p) {
-		fprintf(fp, "doing nothing because pids differ: pid = %d, p = %d\n", pid, p);
-		fclose(fp);
+	if (pid != p)
 		return;
-	}
 
-	fprintf(fp, "checking if child exited normally, and if not, exiting here\n");
 	if (WIFEXITED(stat) && WEXITSTATUS(stat))
 		die("child exited with status %d\n", WEXITSTATUS(stat));
 	else if (WIFSIGNALED(stat))
 		die("child terminated due to signal %d\n", WTERMSIG(stat));
 
-	fprintf(fp, "finishing normal execution of sigchld\n");
-	fclose(fp);
 	exit(0);
 }
 
