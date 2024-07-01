@@ -2177,8 +2177,6 @@ run:
 	xsetenv();
 	selinit();
 
-	atexit(returnfocus);
-
 	run();
 
 	return 0;

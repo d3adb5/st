@@ -721,13 +721,14 @@ sigchld(int a)
 	if (pid != p)
 		return;
 
+	returnfocus();
+
 	if (WIFEXITED(stat) && WEXITSTATUS(stat))
 		die("child exited with status %d\n", WEXITSTATUS(stat));
 	else if (WIFSIGNALED(stat))
 		die("child terminated due to signal %d\n", WTERMSIG(stat));
 
-	returnfocus();
-	_exit(0);
+	exit(0);
 }
 
 void
@@ -782,6 +783,7 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 	if (openpty(&m, &s, NULL, NULL, NULL) < 0)
 		die("openpty failed: %s\n", strerror(errno));
 
+	signal(SIGCHLD, sigchld);
 	switch (pid = fork()) {
 	case -1:
 		die("fork failed: %s\n", strerror(errno));
@@ -810,7 +812,6 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 #endif
 		close(s);
 		cmdfd = m;
-		signal(SIGCHLD, sigchld);
 		break;
 	}
 	return cmdfd;
