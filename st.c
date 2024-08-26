@@ -750,10 +750,13 @@ sigchld(int a)
 
 	logDebug("sigchld", "returnfocus returned, running WIFEXITED and WIFSIGNALED");
 
-	if (WIFEXITED(stat) && WEXITSTATUS(stat))
+	if (WIFEXITED(stat) && WEXITSTATUS(stat)) {
+		logDebug("sigchld", "child exited with status %d, calling die()", WEXITSTATUS(stat));
 		die("child exited with status %d\n", WEXITSTATUS(stat));
-	else if (WIFSIGNALED(stat))
+	} else if (WIFSIGNALED(stat)) {
+		logDebug("sigchld", "child terminated due to signal %d, calling die()", WTERMSIG(stat));
 		die("child terminated due to signal %d\n", WTERMSIG(stat));
+	}
 
 	logDebug("sigchld", "exiting normally, or trying to");
 
