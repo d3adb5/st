@@ -734,12 +734,12 @@ sigchld(int a)
 	int stat;
 	pid_t p;
 
-	logDebug("sigchld", "waiting for pid %hd", pid);
+	logDebug("sigchld", "waiting for pid %d", pid);
 
 	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
-		die("waiting for pid %hd failed: %s\n", pid, strerror(errno));
+		die("waiting for pid %d failed: %s\n", pid, strerror(errno));
 
-	logDebug("sigchld", "pid %hd (p) exited, checking if it's equal to %hd (pid)", p, pid);
+	logDebug("sigchld", "pid %d (p) exited, checking if it's equal to %d (pid)", p, pid);
 
 	if (pid != p)
 		return;
