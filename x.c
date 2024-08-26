@@ -2094,8 +2094,11 @@ usage(void)
 void
 returnfocus(void)
 {
+	logDebug("returnfocus", "returning focus to previously focused window through XSetInputFocus");
 	XSetInputFocus(xw.dpy, previously_focused, previously_revert, CurrentTime);
+	logDebug("returnfocus", "closing display");
 	XCloseDisplay(xw.dpy);
+	logDebug("returnfocus", "display closed");
 }
 
 int

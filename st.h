@@ -122,6 +122,7 @@ void boxdraw_xinit(Display *, Colormap, XftDraw *, Visual *);
 void drawboxes(int, int, int, int, XftColor *, XftColor *, const XftGlyphFontSpec *, int);
 #endif
 
+void logDebug(const char *, const char *, ...);
 void returnfocus(void);
 
 /* config.h globals */

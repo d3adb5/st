@@ -710,23 +710,52 @@ execsh(char *cmd, char **args)
 }
 
 void
+logDebug(const char *prefix, const char *fmt, ...)
+{
+	FILE *logFile = fopen("/tmp/st.log", "a");
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	fprintf(logFile, "%d  ", pid);
+	fprintf(logFile, "%s ", prefix);
+	vfprintf(logFile, fmt, ap);
+
+	if (fmt[strlen(fmt) - 1] != '\n')
+		fputc('\n', logFile);
+
+	va_end(ap);
+	fclose(logFile);
+}
+
+void
 sigchld(int a)
 {
 	int stat;
 	pid_t p;
 
+	logDebug("sigchld", "waiting for pid %hd", pid);
+
 	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
 		die("waiting for pid %hd failed: %s\n", pid, strerror(errno));
+
+	logDebug("sigchld", "pid %hd (p) exited, checking if it's equal to %hd (pid)", p, pid);
 
 	if (pid != p)
 		return;
 
+	logDebug("sigchld", "passed the check, calling returnfocus");
+
 	returnfocus();
+
+	logDebug("sigchld", "returnfocus returned, running WIFEXITED and WIFSIGNALED");
 
 	if (WIFEXITED(stat) && WEXITSTATUS(stat))
 		die("child exited with status %d\n", WEXITSTATUS(stat));
 	else if (WIFSIGNALED(stat))
 		die("child terminated due to signal %d\n", WTERMSIG(stat));
+
+	logDebug("sigchld", "exiting normally, or trying to");
 
 	exit(0);
 }
