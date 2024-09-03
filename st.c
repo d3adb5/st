@@ -43,6 +43,9 @@
 #define ISCONTROL(c)		(ISCONTROLC0(c) || ISCONTROLC1(c))
 #define ISDELIM(u)		(u && wcschr(worddelimiters, u))
 
+/* extra command line options */
+unsigned short opt_debug = 0;
+
 enum term_mode {
 	MODE_WRAP        = 1 << 0,
 	MODE_INSERT      = 1 << 1,
@@ -712,8 +715,16 @@ execsh(char *cmd, char **args)
 void
 logDebug(const char *prefix, const char *fmt, ...)
 {
-	FILE *logFile = fopen("/tmp/st.log", "a");
+	FILE *logFile = NULL;
 	va_list ap;
+
+	if (!opt_debug)
+		return;
+
+	if (!(logFile = fopen("/tmp/st.log", "a"))) {
+		perror("fopen");
+		return;
+	}
 
 	va_start(ap, fmt);
 

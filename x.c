@@ -2124,6 +2124,9 @@ main(int argc, char *argv[])
 	case 'C':
 		xw.center_window = 1;
 		break;
+	case 'd':
+		opt_debug = 1;
+		break;
 	case 'e':
 		if (argc > 0)
 			--argc, ++argv;

@@ -139,3 +139,6 @@ extern unsigned int defaultfg;
 extern unsigned int defaultbg;
 extern unsigned int defaultcs;
 extern const int boxdraw, boxdraw_bold, boxdraw_braille;
+
+/* extra command line options */
+extern unsigned short opt_debug;
