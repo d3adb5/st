@@ -43,6 +43,9 @@
 #define ISCONTROL(c)		(ISCONTROLC0(c) || ISCONTROLC1(c))
 #define ISDELIM(u)		(u && wcschr(worddelimiters, u))
 
+/* extra command line options */
+unsigned short opt_debug = 0;
+
 enum term_mode {
 	MODE_WRAP        = 1 << 0,
 	MODE_INSERT      = 1 << 1,
@@ -710,24 +713,65 @@ execsh(char *cmd, char **args)
 }
 
 void
+logDebug(const char *prefix, const char *fmt, ...)
+{
+	FILE *logFile = NULL;
+	va_list ap;
+
+	if (!opt_debug)
+		return;
+
+	if (!(logFile = fopen("/tmp/st.log", "a"))) {
+		perror("fopen");
+		return;
+	}
+
+	va_start(ap, fmt);
+
+	fprintf(logFile, "%d  ", pid);
+	fprintf(logFile, "%s ", prefix);
+	vfprintf(logFile, fmt, ap);
+
+	if (fmt[strlen(fmt) - 1] != '\n')
+		fputc('\n', logFile);
+
+	va_end(ap);
+	fclose(logFile);
+}
+
+void
 sigchld(int a)
 {
 	int stat;
 	pid_t p;
 
+	logDebug("sigchld", "waiting for pid %d", pid);
+
 	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
-		die("waiting for pid %hd failed: %s\n", pid, strerror(errno));
+		die("waiting for pid %d failed: %s\n", pid, strerror(errno));
+
+	logDebug("sigchld", "pid %d (p) exited, checking if it's equal to %d (pid)", p, pid);
 
 	if (pid != p)
 		return;
 
-	if (WIFEXITED(stat) && WEXITSTATUS(stat))
-		die("child exited with status %d\n", WEXITSTATUS(stat));
-	else if (WIFSIGNALED(stat))
-		die("child terminated due to signal %d\n", WTERMSIG(stat));
+	logDebug("sigchld", "passed the check, calling returnfocus");
 
 	returnfocus();
-	_exit(0);
+
+	logDebug("sigchld", "returnfocus returned, running WIFEXITED and WIFSIGNALED");
+
+	if (WIFEXITED(stat) && WEXITSTATUS(stat)) {
+		logDebug("sigchld", "child exited with status %d, calling die()\n\n", WEXITSTATUS(stat));
+		die("child exited with status %d\n", WEXITSTATUS(stat));
+	} else if (WIFSIGNALED(stat)) {
+		logDebug("sigchld", "child terminated due to signal %d, calling die()\n\n", WTERMSIG(stat));
+		die("child terminated due to signal %d\n", WTERMSIG(stat));
+	}
+
+	logDebug("sigchld", "exiting normally, or trying to\n\n");
+
+	exit(0);
 }
 
 void
@@ -782,6 +826,7 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 	if (openpty(&m, &s, NULL, NULL, NULL) < 0)
 		die("openpty failed: %s\n", strerror(errno));
 
+	signal(SIGCHLD, sigchld);
 	switch (pid = fork()) {
 	case -1:
 		die("fork failed: %s\n", strerror(errno));
@@ -810,7 +855,6 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 #endif
 		close(s);
 		cmdfd = m;
-		signal(SIGCHLD, sigchld);
 		break;
 	}
 	return cmdfd;
