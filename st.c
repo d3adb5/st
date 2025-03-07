@@ -728,7 +728,7 @@ logDebug(const char *prefix, const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	fprintf(logFile, "%d  ", pid);
+	fprintf(logFile, "%d  ", getpid());
 	fprintf(logFile, "%s ", prefix);
 	vfprintf(logFile, fmt, ap);
 
