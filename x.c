@@ -2178,6 +2178,8 @@ run:
 	if (!opt_title)
 		opt_title = (opt_line || !opt_cmd) ? "st" : opt_cmd[0];
 
+	logDebug("main", "starting st with pid %d", getpid());
+
 	setlocale(LC_CTYPE, "");
 	XSetLocaleModifiers("");
 	cols = MAX(cols, 1);
@@ -2187,7 +2189,11 @@ run:
 	xsetenv();
 	selinit();
 
+	logDebug("main", "calling run()");
+
 	run();
+
+	logDebug("main", "run() returned, returning 0");
 
 	return 0;
 }
