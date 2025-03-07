@@ -849,11 +849,14 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 		execsh(cmd, args);
 		break;
 	default:
+		logDebug("ttynew", "parent process, pid is %d", pid);
 #ifdef __OpenBSD__
 		if (pledge("stdio rpath tty proc", NULL) == -1)
 			die("pledge\n");
 #endif
+		logDebug("ttynew", "closing slave fd %d", s);
 		close(s);
+		logDebug("ttynew", "returning master fd %d", m);
 		cmdfd = m;
 		break;
 	}
