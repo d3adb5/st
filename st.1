@@ -3,7 +3,7 @@
 st \- simple terminal
 .SH SYNOPSIS
 .B st
-.RB [ \-aCirv ]
+.RB [ \-aCdirv ]
 .RB [ \-b
 .IR bordersize ]
 .RB [ \-B
@@ -31,7 +31,7 @@ st \- simple terminal
 .RI [ arguments ...]]
 .PP
 .B st
-.RB [ \-aCirv ]
+.RB [ \-aCdirv ]
 .RB [ \-b
 .IR bordersize ]
 .RB [ \-B
@@ -74,6 +74,9 @@ defines the window class (default $TERM).
 .TP
 .BI \-C
 try to center the st window on the screen.
+.TP
+.BI \-d
+enable debug logging.
 .TP
 .BI \-f " font"
 defines the
