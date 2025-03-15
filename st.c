@@ -876,9 +876,11 @@ ttyread(void)
 
 	switch (ret) {
 	case 0:
-		exit(0);
+		logDebug("ttyread", "ignoring EOF reached on tty\n");
+		return 0;
 	case -1:
-		die("couldn't read from shell: %s\n", strerror(errno));
+		logDebug("ttyread", "ignoring read error on tty: %s\n", strerror(errno));
+		return 0;
 	default:
 		buflen += ret;
 		written = twrite(buf, buflen, 0);

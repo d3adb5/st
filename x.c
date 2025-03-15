@@ -2080,18 +2080,13 @@ run(void)
 		XFlush(xw.dpy);
 		drawing = 0;
 
-		if (caught_sigchld > 0) {
-			logDebug("run", "caught SIGCHLD, breaking out of the main loop");
-			if (childisdead())
-				break;
-			else
-				caught_sigchld = 0;
-		} else {
-			logDebug("run", "caught_sigchld is still %d", caught_sigchld);
-		}
+		if (caught_sigchld > 0 && childisdead())
+			break;
+		else
+			caught_sigchld = 0;
 	}
 
-	logDebug("run", "caught SIGCHLD, got out of the main loop");
+	logDebug("run", "out of the main loop");
 
 	/*
 	 * Return focus to the window previously focused before st was started,
