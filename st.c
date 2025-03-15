@@ -771,7 +771,7 @@ sigchld(int a)
 
 	logDebug("sigchld", "exiting normally, or trying to\n\n");
 
-	exit(0);
+	_exit(0);
 }
 
 void
