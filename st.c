@@ -221,6 +221,9 @@ static char base64dec_getc(const char **);
 
 static ssize_t xwrite(int, const char *, size_t);
 
+/* Globals used by signal handlers */
+volatile sig_atomic_t caught_sigchld = 0;
+
 /* Globals */
 static Term term;
 static Selection sel;
@@ -755,12 +758,6 @@ sigchld(int a)
 	if (pid != p)
 		return;
 
-	logDebug("sigchld", "passed the check, calling returnfocus");
-
-	returnfocus();
-
-	logDebug("sigchld", "returnfocus returned, running WIFEXITED and WIFSIGNALED");
-
 	if (WIFEXITED(stat) && WEXITSTATUS(stat)) {
 		logDebug("sigchld", "child exited with status %d, calling die()\n\n", WEXITSTATUS(stat));
 		die("child exited with status %d\n", WEXITSTATUS(stat));
@@ -769,9 +766,8 @@ sigchld(int a)
 		die("child terminated due to signal %d\n", WTERMSIG(stat));
 	}
 
-	logDebug("sigchld", "exiting normally, or trying to\n\n");
-
-	_exit(0);
+	logDebug("sigchld", "incrementing caught_sigchld\n\n");
+	caught_sigchld++;
 }
 
 void

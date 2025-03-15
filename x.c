@@ -2008,7 +2008,7 @@ run(void)
 	ttyfd = ttynew(opt_line, shell, opt_io, opt_cmd);
 	cresize(w, h);
 
-	for (timeout = -1, drawing = 0, lastblink = (struct timespec){0};;) {
+	for (timeout = -1, drawing = 0, lastblink = (struct timespec){0}; caught_sigchld < 1;) {
 		FD_ZERO(&rfd);
 		FD_SET(ttyfd, &rfd);
 		FD_SET(xfd, &rfd);
@@ -2080,6 +2080,19 @@ run(void)
 		XFlush(xw.dpy);
 		drawing = 0;
 	}
+
+	logDebug("run", "caught SIGCHLD, got out of the main loop");
+
+	/*
+	 * Return focus to the window previously focused before st was started,
+	 * if the override_redirect flag was set.
+	 */
+
+	if (xw.override_redirect) {
+		XSetInputFocus(xw.dpy, previously_focused, previously_revert, CurrentTime);
+	}
+
+	XCloseDisplay(xw.dpy);
 }
 
 void
@@ -2093,16 +2106,6 @@ usage(void)
 	    " [-n name] [-o file]\n"
 	    "          [-T title] [-t title] [-w windowid] -l line"
 	    " [stty_args ...]\n", argv0, argv0);
-}
-
-void
-returnfocus(void)
-{
-	logDebug("returnfocus", "returning focus to previously focused window through XSetInputFocus");
-	XSetInputFocus(xw.dpy, previously_focused, previously_revert, CurrentTime);
-	logDebug("returnfocus", "closing display");
-	XCloseDisplay(xw.dpy);
-	logDebug("returnfocus", "display closed");
 }
 
 int
