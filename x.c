@@ -2058,7 +2058,7 @@ run(void)
 			}
 			timeout = (maxlatency - TIMEDIFF(now, trigger)) \
 			          / maxlatency * minlatency;
-			if (timeout > 0)
+			if (timeout > 0 && !caught_sigchld)
 				continue;  /* we have time, try to find idle */
 		}
 
