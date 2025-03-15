@@ -124,6 +124,7 @@ void drawboxes(int, int, int, int, XftColor *, XftColor *, const XftGlyphFontSpe
 #endif
 
 void logDebug(const char *, const char *, ...);
+int childisdead(void);
 
 /* config.h globals */
 extern char *utmp;

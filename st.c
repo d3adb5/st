@@ -745,29 +745,34 @@ logDebug(const char *prefix, const char *fmt, ...)
 void
 sigchld(int a)
 {
+	caught_sigchld++;
+}
+
+int
+childisdead(void)
+{
 	int stat;
 	pid_t p;
 
-	logDebug("sigchld", "waiting for pid %d", pid);
+	logDebug("childisdead", "calling waitpid on pid %d without hanging", pid);
 
 	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
 		die("waiting for pid %d failed: %s\n", pid, strerror(errno));
 
-	logDebug("sigchld", "pid %d (p) exited, checking if it's equal to %d (pid)", p, pid);
-
-	if (pid != p)
-		return;
-
-	if (WIFEXITED(stat) && WEXITSTATUS(stat)) {
-		logDebug("sigchld", "child exited with status %d, calling die()\n\n", WEXITSTATUS(stat));
-		die("child exited with status %d\n", WEXITSTATUS(stat));
-	} else if (WIFSIGNALED(stat)) {
-		logDebug("sigchld", "child terminated due to signal %d, calling die()\n\n", WTERMSIG(stat));
-		die("child terminated due to signal %d\n", WTERMSIG(stat));
+	if (pid != p) {
+		logDebug("childisdead", "pid %d is not dead, returning 0", pid);
+		return 0;
 	}
 
-	logDebug("sigchld", "incrementing caught_sigchld\n\n");
-	caught_sigchld++;
+	if (WIFEXITED(stat) && WEXITSTATUS(stat)) {
+		logDebug("childisdead", "child exited with status %d\n\n", WEXITSTATUS(stat));
+		return 1;
+	} else if (WIFSIGNALED(stat)) {
+		logDebug("childisdead", "child terminated due to signal %d\n\n", WTERMSIG(stat));
+		return 1;
+	}
+
+	return 1;
 }
 
 void
