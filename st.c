@@ -732,7 +732,7 @@ logDebug(const char *prefix, const char *fmt, ...)
 	va_start(ap, fmt);
 
 	fprintf(logFile, "%d  ", getpid());
-	fprintf(logFile, "%s ", prefix);
+	fprintf(logFile, "[%s] ", prefix);
 	vfprintf(logFile, fmt, ap);
 
 	if (fmt[strlen(fmt) - 1] != '\n')
