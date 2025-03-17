@@ -2058,7 +2058,7 @@ run(void)
 			}
 			timeout = (maxlatency - TIMEDIFF(now, trigger)) \
 			          / maxlatency * minlatency;
-			if (timeout > 0)
+			if (timeout > 0 && !caught_sigchld)
 				continue;  /* we have time, try to find idle */
 		}
 
@@ -2079,7 +2079,25 @@ run(void)
 		draw();
 		XFlush(xw.dpy);
 		drawing = 0;
+
+		if (caught_sigchld > 0 && childisdead())
+			break;
+		else
+			caught_sigchld = 0;
 	}
+
+	logDebug("run", "out of the main loop");
+
+	/*
+	 * Return focus to the window previously focused before st was started,
+	 * if the override_redirect flag was set.
+	 */
+
+	if (xw.override_redirect) {
+		XSetInputFocus(xw.dpy, previously_focused, previously_revert, CurrentTime);
+	}
+
+	XCloseDisplay(xw.dpy);
 }
 
 void
@@ -2093,16 +2111,6 @@ usage(void)
 	    " [-n name] [-o file]\n"
 	    "          [-T title] [-t title] [-w windowid] -l line"
 	    " [stty_args ...]\n", argv0, argv0);
-}
-
-void
-returnfocus(void)
-{
-	logDebug("returnfocus", "returning focus to previously focused window through XSetInputFocus");
-	XSetInputFocus(xw.dpy, previously_focused, previously_revert, CurrentTime);
-	logDebug("returnfocus", "closing display");
-	XCloseDisplay(xw.dpy);
-	logDebug("returnfocus", "display closed");
 }
 
 int

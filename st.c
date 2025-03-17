@@ -221,6 +221,9 @@ static char base64dec_getc(const char **);
 
 static ssize_t xwrite(int, const char *, size_t);
 
+/* Globals used by signal handlers */
+volatile sig_atomic_t caught_sigchld = 0;
+
 /* Globals */
 static Term term;
 static Selection sel;
@@ -729,7 +732,7 @@ logDebug(const char *prefix, const char *fmt, ...)
 	va_start(ap, fmt);
 
 	fprintf(logFile, "%d  ", getpid());
-	fprintf(logFile, "%s ", prefix);
+	fprintf(logFile, "[%s] ", prefix);
 	vfprintf(logFile, fmt, ap);
 
 	if (fmt[strlen(fmt) - 1] != '\n')
@@ -742,36 +745,34 @@ logDebug(const char *prefix, const char *fmt, ...)
 void
 sigchld(int a)
 {
+	caught_sigchld++;
+}
+
+int
+childisdead(void)
+{
 	int stat;
 	pid_t p;
 
-	logDebug("sigchld", "waiting for pid %d", pid);
+	logDebug("childisdead", "calling waitpid on pid %d without hanging", pid);
 
 	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
 		die("waiting for pid %d failed: %s\n", pid, strerror(errno));
 
-	logDebug("sigchld", "pid %d (p) exited, checking if it's equal to %d (pid)", p, pid);
-
-	if (pid != p)
-		return;
-
-	logDebug("sigchld", "passed the check, calling returnfocus");
-
-	returnfocus();
-
-	logDebug("sigchld", "returnfocus returned, running WIFEXITED and WIFSIGNALED");
-
-	if (WIFEXITED(stat) && WEXITSTATUS(stat)) {
-		logDebug("sigchld", "child exited with status %d, calling die()\n\n", WEXITSTATUS(stat));
-		die("child exited with status %d\n", WEXITSTATUS(stat));
-	} else if (WIFSIGNALED(stat)) {
-		logDebug("sigchld", "child terminated due to signal %d, calling die()\n\n", WTERMSIG(stat));
-		die("child terminated due to signal %d\n", WTERMSIG(stat));
+	if (pid != p) {
+		logDebug("childisdead", "pid %d is not dead, returning 0", pid);
+		return 0;
 	}
 
-	logDebug("sigchld", "exiting normally, or trying to\n\n");
+	if (WIFEXITED(stat) && WEXITSTATUS(stat)) {
+		logDebug("childisdead", "child exited with status %d\n\n", WEXITSTATUS(stat));
+		return 1;
+	} else if (WIFSIGNALED(stat)) {
+		logDebug("childisdead", "child terminated due to signal %d\n\n", WTERMSIG(stat));
+		return 1;
+	}
 
-	exit(0);
+	return 1;
 }
 
 void
@@ -875,9 +876,11 @@ ttyread(void)
 
 	switch (ret) {
 	case 0:
-		exit(0);
+		logDebug("ttyread", "ignoring EOF reached on tty\n");
+		return 0;
 	case -1:
-		die("couldn't read from shell: %s\n", strerror(errno));
+		logDebug("ttyread", "ignoring read error on tty: %s\n", strerror(errno));
+		return 0;
 	default:
 		buflen += ret;
 		written = twrite(buf, buflen, 0);

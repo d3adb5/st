@@ -1,5 +1,6 @@
 /* See LICENSE for license details. */
 
+#include <signal.h>
 #include <stdint.h>
 #include <sys/types.h>
 
@@ -123,7 +124,7 @@ void drawboxes(int, int, int, int, XftColor *, XftColor *, const XftGlyphFontSpe
 #endif
 
 void logDebug(const char *, const char *, ...);
-void returnfocus(void);
+int childisdead(void);
 
 /* config.h globals */
 extern char *utmp;
@@ -142,3 +143,6 @@ extern const int boxdraw, boxdraw_bold, boxdraw_braille;
 
 /* extra command line options */
 extern unsigned short opt_debug;
+
+/* globals used by signal handlers */
+extern volatile sig_atomic_t caught_sigchld;
