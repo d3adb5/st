@@ -2076,14 +2076,14 @@ run(void)
 			}
 		}
 
-		draw();
-		XFlush(xw.dpy);
-		drawing = 0;
-
 		if (caught_sigchld > 0 && childisdead())
 			break;
 		else
 			caught_sigchld = 0;
+
+		draw();
+		XFlush(xw.dpy);
+		drawing = 0;
 	}
 
 	logDebug("run", "out of the main loop");
