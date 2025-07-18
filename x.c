@@ -15,6 +15,7 @@
 #include <X11/Xft/Xft.h>
 #include <X11/XKBlib.h>
 #include <stdlib.h>
+#include <X11/extensions/Xinerama.h>
 
 char *argv0;
 #include "arg.h"
@@ -167,6 +168,7 @@ static void xsetenv(void);
 static void xseturgency(int);
 static int evcol(XEvent *);
 static int evrow(XEvent *);
+static int xineramasetwincentercoords(void);
 
 static void expose(XEvent *);
 static void visibility(XEvent *);
@@ -1150,6 +1152,39 @@ xicdestroy(XIC xim, XPointer client, XPointer call)
 	return 1;
 }
 
+int
+xineramasetwincentercoords(void)
+{
+	XineramaScreenInfo *monitors = NULL;
+	int nmonitors, ptr_x, ptr_y, dummy;
+	Window rootr, childr;
+
+	if (!(monitors = XineramaQueryScreens(xw.dpy, &nmonitors)))
+		return 0;
+
+	if (!XQueryPointer(xw.dpy, RootWindow(xw.dpy, xw.scr), &rootr, &childr,
+				&ptr_x, &ptr_y, &dummy, &dummy, (unsigned int *) &dummy)) {
+		XFree(monitors);
+		return 0;
+	}
+
+	for (int i = 0; i < nmonitors; ++i) {
+		int mx = monitors[i].x_org;
+		int my = monitors[i].y_org;
+		int mw = monitors[i].width;
+		int mh = monitors[i].height;
+
+		if (ptr_x >= mx && ptr_x < mx + mw && ptr_y >= my && ptr_y < my + mh) {
+			xw.l = mx + (mw - win.w) / 2;
+			xw.t = my + (mh - win.h) / 2;
+			break;
+		}
+	}
+
+	XFree(monitors);
+	return 1;
+}
+
 void
 xinit(int cols, int rows)
 {
@@ -1187,8 +1222,10 @@ xinit(int cols, int rows)
 		xw.t += DisplayHeight(xw.dpy, xw.scr) - win.h - 2;
 
 	if (xw.center_window) {
-		xw.l = (DisplayWidth(xw.dpy, xw.scr) - win.w) / 2;
-		xw.t = (DisplayHeight(xw.dpy, xw.scr) - win.h) / 2;
+		if (!XineramaIsActive(xw.dpy) || !xineramasetwincentercoords()) {
+			xw.l = (DisplayWidth(xw.dpy, xw.scr) - win.w) / 2;
+			xw.t = (DisplayHeight(xw.dpy, xw.scr) - win.h) / 2;
+		}
 	}
 
 	/* Events */
